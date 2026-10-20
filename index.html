@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chúc Mừng Ngày 26/10 - 3D Love Space ❤️</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #030008;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphism Panel Styling */
+        .glass-panel {
+            background: rgba(18, 10, 28, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(255, 20, 147, 0.3);
+        }
+
+        .neon-text-glow {
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.8),
+                         0 0 20px rgba(255, 20, 147, 0.6),
+                         0 0 30px rgba(255, 0, 128, 0.4);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 105, 180, 0.4);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 105, 180, 0.8);
+        }
+
+        .ambient-glow {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,20,147,0.15) 0%, rgba(138,43,226,0.08) 50%, rgba(0,0,0,0) 70%);
+            pointer-events: none;
+            z-index: 2;
+            animation: pulseAura 8s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseAura {
+            0% { transform: scale(0.9) translate(-10%, -10%); opacity: 0.5; }
+            100% { transform: scale(1.2) translate(10%, 10%); opacity: 0.9; }
+        }
+    </style>
+</head>
+<body class="w-full h-screen overflow-hidden">
+
+    <!-- Audio Element for Custom Music -->
+    <audio id="bg-audio" src="https://files.catbox.moe/dk1169.mp3" loop></audio>
+
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Ambient Visual Glow Overlay -->
+    <div class="ambient-glow top-0 left-0"></div>
+    <div class="ambient-glow bottom-0 right-0" style="animation-delay: -4s;"></div>
+
+    <!-- Top Navigation Header -->
+    <div class="fixed top-5 left-5 z-20 pointer-events-none">
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-300 to-purple-400 neon-text-glow font-serif">
+            Mừng Sinh Nhật Mẹ 26/10 và ngày quốc tế Phụ Nữ ❤️
+        </h1>
+        <p class="text-xs md:text-sm text-pink-200/70 mt-1 font-light tracking-wider">
+           Tặng Mẹ <3 
+        </p>
+    </div>
+
+    <!-- Floating HUD Buttons -->
+    <div class="fixed top-5 right-5 z-20 flex gap-3">
+        <!-- Audio Play/Pause Button -->
+        <button id="btn-audio" onclick="toggleAudio()" class="glass-panel p-3.5 rounded-full hover:bg-pink-900/40 transition-all duration-300 text-pink-300 border border-pink-500/30 hover:scale-105 active:scale-95 shadow-lg group" title="Bật/Tắt Âm Nhạc">
+            <i id="audio-icon" class="fas fa-music text-lg group-hover:rotate-12 transition-transform"></i>
+        </button>
+
+        <!-- Customization Drawer Toggle Button -->
+        <button onclick="togglePanel()" class="glass-panel px-5 py-3.5 rounded-full hover:bg-pink-900/40 transition-all duration-300 text-pink-200 border border-pink-500/30 flex items-center gap-2 hover:scale-105 active:scale-95 shadow-lg font-medium text-sm">
+            <i class="fas fa-cog text-pink-400"></i>
+            <span>Tùy Chỉnh Ảnh & Nhạc</span>
+        </button>
+    </div>
+
+    <!-- Side Customization Panel Drawer -->
+    <div id="side-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 glass-panel z-40 transform translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col justify-between border-l border-pink-500/30">
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
+            <!-- Header -->
+            <div class="flex justify-between items-center pb-4 border-b border-pink-500/20 mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/40">
+                        <i class="fas fa-sliders-h text-pink-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-pink-100">Bảng Tùy Chỉnh</h2>
+                        <p class="text-xs text-pink-300/60">Tải ảnh, nhạc & đổi lời chúc</p>
+                    </div>
+                </div>
+                <button onclick="togglePanel()" class="text-pink-300/60 hover:text-pink-100 p-2 rounded-full hover:bg-white/5 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-5">
+
+                <!-- Audio Upload & Volume Section -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🎵 Nhạc Nền & Âm Lượng</span>
+                    
+                    <label class="w-full px-3 py-2.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 rounded-xl text-xs font-medium text-purple-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-file-audio"></i> Chọn File Nhạc MP3 Từ Máy
+                        <input type="file" accept="audio/*" class="hidden" onchange="uploadAudioFile(event)">
+                    </label>
+
+                    <div class="text-center text-[10px] text-pink-300/50 uppercase tracking-widest font-bold">Hoặc dán Link MP3</div>
+
+                    <input type="text" id="input-audio-url" value="https://files.catbox.moe/dk1169.mp3" placeholder="Paste direct MP3 URL..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadAudioUrl()">
+
+                    <!-- Music Volume Slider -->
+                    <div class="pt-2 space-y-1">
+                        <div class="flex justify-between items-center">
+                            <label class="text-[11px] font-semibold text-pink-300 uppercase tracking-wider">🔊 Âm Lượng Nhạc (Volume)</label>
+                            <span id="volume-value-display" class="text-xs font-bold text-pink-200 bg-pink-500/20 px-2 py-0.5 rounded-md">80%</span>
+                        </div>
+                        <input type="range" id="input-music-volume" min="0" max="1" step="0.05" value="0.8" class="w-full accent-pink-500 cursor-pointer" oninput="updateMusicVolume()">
+                    </div>
+                </div>
+
+                <!-- Text Flow Speed Slider Setting -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-semibold text-pink-300 uppercase tracking-wider">⚡ Tốc Độ Chữ Bay (Speed Flow)</label>
+                        <span id="speed-value-display" class="text-xs font-bold text-pink-200 bg-pink-500/20 px-2 py-0.5 rounded-md">1.0x</span>
+                    </div>
+                    <input type="range" id="input-text-speed" min="0.2" max="3.0" step="0.1" value="1.0" class="w-full accent-pink-500 cursor-pointer" oninput="updateTextSpeedLabel()">
+                </div>
+
+                <!-- Slot 7 - Central Heart Image -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-rose-500/40 bg-rose-950/10 space-y-3">
+                    <span class="text-xs font-bold text-rose-300 uppercase tracking-wider block">💖 Ảnh Giữa Trái Tim (Slot 7 - Quan Trọng)</span>
+                    <label class="flex-1 px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl text-xs font-medium text-rose-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Giữa Tim Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadCenterImage(event)">
+                    </label>
+                    <input type="text" id="url-slot-center" value="https://i.ibb.co/pjHDBPwG/IMG-20261019-215639.jpg" placeholder="Hoặc dán URL ảnh giữa tim..." class="w-full bg-black/50 border border-rose-500/30 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-rose-400" onchange="loadCenterImageUrl()">
+                    <div id="preview-center" class="h-28 w-full rounded-xl bg-pink-950/30 border border-rose-500/20 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/pjHDBPwG/IMG-20261019-215639.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Photo Upload Slots (1 to 6) -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🖼️ Ảnh Card Xung Quanh 1</span>
+                    <label class="flex-1 px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 rounded-xl text-xs font-medium text-pink-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadImageSlot(event, 0)">
+                    </label>
+                    <input type="text" id="url-slot-0" value="https://i.ibb.co/Vp3Ys9YZ/484224459-2076900739440461-464828918961762431-n.jpg" placeholder="Hoặc dán URL ảnh..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadUrlSlot(0)">
+                    <div id="preview-0" class="h-20 w-full rounded-xl bg-pink-950/30 border border-pink-500/10 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/Vp3Ys9YZ/484224459-2076900739440461-464828918961762431-n.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Slot 2 -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🖼️ Ảnh Card Xung Quanh 2</span>
+                    <label class="flex-1 px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 rounded-xl text-xs font-medium text-pink-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadImageSlot(event, 1)">
+                    </label>
+                    <input type="text" id="url-slot-1" value="https://i.ibb.co/bgYVdMmZ/6894c1b3-7f7e-49eb-becd-bd718549af60-1.jpg" placeholder="Hoặc dán URL ảnh..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadUrlSlot(1)">
+                    <div id="preview-1" class="h-20 w-full rounded-xl bg-pink-950/30 border border-pink-500/10 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/bgYVdMmZ/6894c1b3-7f7e-49eb-becd-bd718549af60-1.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Slot 3 -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🖼️ Ảnh Card Xung Quanh 3</span>
+                    <label class="flex-1 px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 rounded-xl text-xs font-medium text-pink-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadImageSlot(event, 2)">
+                    </label>
+                    <input type="text" id="url-slot-2" value="https://i.ibb.co/WWG39JKc/9b451d98-5ac9-4a13-bcb6-88aeb84b564c.jpg" placeholder="Hoặc dán URL ảnh..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadUrlSlot(2)">
+                    <div id="preview-2" class="h-20 w-full rounded-xl bg-pink-950/30 border border-pink-500/10 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/WWG39JKc/9b451d98-5ac9-4a13-bcb6-88aeb84b564c.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Slot 4 -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🖼️ Ảnh Card Xung Quanh 4</span>
+                    <label class="flex-1 px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 rounded-xl text-xs font-medium text-pink-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadImageSlot(event, 3)">
+                    </label>
+                    <input type="text" id="url-slot-3" value="https://i.ibb.co/27MGZ85b/IMG-20261019-215644.jpg" placeholder="Hoặc dán URL ảnh..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadUrlSlot(3)">
+                    <div id="preview-3" class="h-20 w-full rounded-xl bg-pink-950/30 border border-pink-500/10 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/27MGZ85b/IMG-20261019-215644.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Slot 5 -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🖼️ Ảnh Card Xung Quanh 5</span>
+                    <label class="flex-1 px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 rounded-xl text-xs font-medium text-pink-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadImageSlot(event, 4)">
+                    </label>
+                    <input type="text" id="url-slot-4" value="https://i.ibb.co/Lh9zg2S7/IMG-20261019-215535.jpg" placeholder="Hoặc dán URL ảnh..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadUrlSlot(4)">
+                    <div id="preview-4" class="h-20 w-full rounded-xl bg-pink-950/30 border border-pink-500/10 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/Lh9zg2S7/IMG-20261019-215535.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Slot 6 -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-3">
+                    <span class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🖼️ Ảnh Card Xung Quanh 6</span>
+                    <label class="flex-1 px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 rounded-xl text-xs font-medium text-pink-200 text-center cursor-pointer transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-upload"></i> Chọn Ảnh Từ Máy
+                        <input type="file" accept="image/*" class="hidden" onchange="uploadImageSlot(event, 5)">
+                    </label>
+                    <input type="text" id="url-slot-5" value="https://i.ibb.co/TqNWNR7P/0e862c5a-92bc-42fe-9183-33a359416772.jpg" placeholder="Hoặc dán URL ảnh..." class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400" onchange="loadUrlSlot(5)">
+                    <div id="preview-5" class="h-20 w-full rounded-xl bg-pink-950/30 border border-pink-500/10 flex items-center justify-center overflow-hidden">
+                        <img src="https://images.weserv.nl/?url=i.ibb.co/TqNWNR7P/0e862c5a-92bc-42fe-9183-33a359416772.jpg" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- Number Card Input -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-2">
+                    <label class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">🔢 Con Số Kỷ Niệm</label>
+                    <input type="text" id="input-card-number" value="26/10" class="w-full bg-black/50 border border-pink-500/20 rounded-xl px-3 py-2 text-xs text-pink-100 focus:outline-none focus:border-pink-400">
+                </div>
+
+                <!-- Messages -->
+                <div class="bg-black/30 p-4 rounded-2xl border border-pink-500/20 space-y-2">
+                    <label class="text-xs font-semibold text-pink-300 uppercase tracking-wider block">💬 Lời Chúc (Mỗi dòng 1 câu)</label>
+                    <textarea id="input-messages-text" rows="5" class="w-full bg-black/50 border border-pink-500/20 rounded-xl p-3 text-xs text-pink-100 focus:outline-none focus:border-pink-400 custom-scrollbar"></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Panel Footer -->
+        <div class="pt-4 border-t border-pink-500/20">
+            <button onclick="applyAllCustomizations()" class="w-full py-3 rounded-xl text-xs font-semibold bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white shadow-lg shadow-pink-500/30 transition-all active:scale-95">
+                Áp Dụng Thay Đổi
+            </button>
+        </div>
+    </div>
+
+    <!-- Main 3D Logic Script -->
+    <script>
+        let defaultMessages = [
+            "Con Yêu Mẹ ❤️",
+            "chúc mẹ 26/10 vui vẻ",
+            "chúc mẹ sức khỏe tràn đầy",
+            "ngày càng nhuận sắc",
+            "Trẻ mãi không già, lão hóa ngược",
+            "Trường thọ với đất trời",
+            "Hi vọng năm sau",
+            "Con sẽ có đủ tiền để đưa gia đình đi chơi xa bằng máy bay",
+            "Luôn tươi vui, tích cực", 
+        ];
+
+        // Fixed: expanded loadedTextures array length to 6 to properly support slots 1 to 6
+        let loadedTextures = [null, null, null, null, null, null];
+        let centerTexture = null;
+        let customNumberStr = "26/10";
+        let textSpeedMultiplier = 1.0;
+        let musicVolumeValue = 0.8;
+
+        let scene, camera, renderer, controls;
+        let textObjects = [];
+        let cardObjects = [];
+        let heartObjects = [];
+        let centerCardMesh = null;
+        let starParticles;
+
+        const bgAudio = document.getElementById('bg-audio');
+        let isAudioPlaying = false;
+
+        window.onload = function() {
+            bgAudio.volume = musicVolumeValue;
+            initThreeJS();
+            populatePanelInputs();
+            preloadHardcodedImages();
+            animate();
+            
+            window.addEventListener('resize', onWindowResize);
+
+            document.body.addEventListener('click', function userInteraction() {
+                if (bgAudio.src && !isAudioPlaying) {
+                    toggleAudio();
+                }
+            }, { once: true });
+        };
+
+        function preloadHardcodedImages() {
+            // Slot 7 Center Image URL
+            const centerUrl = "https://i.ibb.co/pjHDBPwG/IMG-20261019-215639.jpg";
+            loadCenterImageFromUrl(centerUrl);
+
+            // Other 6 Image URLs for slots 1 to 6
+            const initialUrls = [
+                "https://i.ibb.co/Vp3Ys9YZ/484224459-2076900739440461-464828918961762431-n.jpg",
+                "https://i.ibb.co/bgYVdMmZ/6894c1b3-7f7e-49eb-becd-bd718549af60-1.jpg",
+                "https://i.ibb.co/WWG39JKc/9b451d98-5ac9-4a13-bcb6-88aeb84b564c.jpg",
+                "https://i.ibb.co/27MGZ85b/IMG-20261019-215644.jpg",
+                "https://i.ibb.co/Lh9zg2S7/IMG-20261019-215535.jpg",
+                "https://i.ibb.co/TqNWNR7P/0e862c5a-92bc-42fe-9183-33a359416772.jpg"
+            ];
+
+            initialUrls.forEach((rawUrl, idx) => {
+                let proxyUrl = rawUrl;
+                if (proxyUrl.startsWith('http') && !proxyUrl.includes(window.location.hostname)) {
+                    proxyUrl = 'https://images.weserv.nl/?url=' + encodeURIComponent(proxyUrl.replace(/^https?:\/\//, ''));
+                }
+
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = proxyUrl;
+                img.onload = function() {
+                    loadedTextures[idx] = buildCardTextureFromImg(img);
+                    rebuildCardObjects();
+                };
+            });
+        }
+
+        // Tạo hình khối 3D Trái Tim (Heart 3D Parametric Surface)
+        function getHeartShapeDestinations(count) {
+            const results = [];
+            for (let i = 0; i < count; i++) {
+                const t = Math.PI * 2 * Math.random();
+                const u = Math.PI * (Math.random() - 0.5);
+                
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                const z = u * 8;
+
+                results.push(new THREE.Vector3(x * 1.8, y * 1.8, z));
+            }
+            return results;
+        }
+
+        function initThreeJS() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030008, 0.002);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 90);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 200;
+            controls.minDistance = 20;
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 2, 300);
+            pointLight.position.set(0, 30, 60);
+            scene.add(pointLight);
+
+            createStarrySpace();
+            createRGBHearts();
+            createCenterCard();
+            rebuildTextObjects(defaultMessages);
+            rebuildCardObjects();
+        }
+
+        function createStarrySpace() {
+            const starCount = 1000;
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i++) {
+                starPos[i * 3] = (Math.random() - 0.5) * 600;
+                starPos[i * 3 + 1] = (Math.random() - 0.5) * 600;
+                starPos[i * 3 + 2] = (Math.random() - 0.5) * 600;
+            }
+
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+
+            const starMat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 1.5,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            starParticles = new THREE.Points(starGeo, starMat);
+            scene.add(starParticles);
+        }
+
+        function createRGBHearts() {
+            const heartShape = new THREE.Shape();
+            const x = 0, y = 0;
+            heartShape.moveTo(x + 2.5, y + 2.5);
+            heartShape.bezierCurveTo(x + 2.5, y + 2.5, x + 2, y, x, y);
+            heartShape.bezierCurveTo(x - 3, y, x - 3, y + 3.5, x - 3, y + 3.5);
+            heartShape.bezierCurveTo(x - 3, y + 5.5, x - 1, y + 7.7, x + 2.5, y + 10);
+            heartShape.bezierCurveTo(x + 6, y + 7.7, x + 8, y + 5.5, x + 8, y + 3.5);
+            heartShape.bezierCurveTo(x + 8, y + 3.5, x + 8, y, x + 5, y);
+            heartShape.bezierCurveTo(x + 3.5, y, x + 2.5, y + 2.5, x + 2.5, y + 2.5);
+
+            const extrudeSettings = { depth: 1.2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.4, bevelThickness: 0.4 };
+            const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+            geometry.center();
+
+            const rgbColors = [0xff0000, 0x00ff22, 0x0066ff];
+            const heartCount = 350; 
+            const heartPoints = getHeartShapeDestinations(heartCount);
+
+            for (let i = 0; i < heartCount; i++) {
+                const colorHex = rgbColors[i % rgbColors.length];
+                const material = new THREE.MeshPhongMaterial({
+                    color: colorHex,
+                    emissive: colorHex,
+                    emissiveIntensity: 0.35,
+                    shininess: 90,
+                    specular: 0xffffff,
+                    side: THREE.DoubleSide
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                const scale = 0.18 + Math.random() * 0.08;
+                mesh.scale.set(scale, scale, scale);
+
+                const targetPos = heartPoints[i];
+                mesh.position.copy(targetPos);
+
+                heartObjects.push({
+                    mesh: mesh,
+                    basePos: targetPos.clone(),
+                    offset: Math.random() * Math.PI * 2,
+                    rotSpeedX: (Math.random() - 0.5) * 0.02,
+                    rotSpeedY: (Math.random() - 0.5) * 0.02
+                });
+
+                scene.add(mesh);
+            }
+        }
+
+        function createCenterCard() {
+            let texture = centerTexture;
+            if (!texture) {
+                texture = createCardTexture("❤️", false);
+            }
+
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.2,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+
+            const geometry = new THREE.PlaneGeometry(24, 30);
+            centerCardMesh = new THREE.Mesh(geometry, material);
+            centerCardMesh.position.set(0, 0, 0);
+            scene.add(centerCardMesh);
+        }
+
+        function updateCenterCardTexture(tex) {
+            centerTexture = tex;
+            if (centerCardMesh) {
+                centerCardMesh.material.map = centerTexture;
+                centerCardMesh.material.needsUpdate = true;
+            }
+        }
+
+        function loadCenterImageFromUrl(rawUrl) {
+            let url = rawUrl;
+            if (url.includes('ibb.co/') && !url.includes('i.ibb.co')) {
+                const parts = url.split('/');
+                const code = parts[parts.length - 1];
+                url = `https://i.ibb.co/${code}/image.jpg`;
+            }
+            if (url.includes('drive.google.com')) {
+                const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    url = 'https://lh3.googleusercontent.com/d/' + match[1];
+                }
+            }
+            if (url.startsWith('http') && !url.includes(window.location.hostname)) {
+                url = 'https://images.weserv.nl/?url=' + encodeURIComponent(url.replace(/^https?:\/\//, ''));
+            }
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = url;
+            img.onload = function() {
+                const tex = buildCardTextureFromImg(img);
+                updateCenterCardTexture(tex);
+                const previewDiv = document.getElementById(`preview-center`);
+                if (previewDiv) {
+                    previewDiv.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+                }
+            };
+        }
+
+        function uploadCenterImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const tex = buildCardTextureFromImg(img);
+                    updateCenterCardTexture(tex);
+                    const previewDiv = document.getElementById(`preview-center`);
+                    previewDiv.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadCenterImageUrl() {
+            const url = document.getElementById('url-slot-center').value.trim();
+            if (!url) return;
+            loadCenterImageFromUrl(url);
+        }
+
+        function createTextTexture(text) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1024;
+            canvas.height = 256;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.shadowColor = '#ff1493';
+            ctx.shadowBlur = 18;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function rebuildTextObjects(messagesList) {
+            textObjects.forEach(obj => scene.remove(obj.mesh));
+            textObjects = [];
+
+            const totalTextCount = 35;
+
+            for (let i = 0; i < totalTextCount; i++) {
+                const msg = messagesList[i % messagesList.length];
+                const texture = createTextTexture(msg);
+
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const geometry = new THREE.PlaneGeometry(28, 7);
+                const mesh = new THREE.Mesh(geometry, material);
+
+                mesh.position.set(
+                    (Math.random() - 0.5) * 140,
+                    (Math.random() - 0.5) * 100,
+                    (Math.random() - 0.5) * 120
+                );
+
+                textObjects.push({
+                    mesh: mesh,
+                    speedZ: (0.04 + Math.random() * 0.06)
+                });
+
+                scene.add(mesh);
+            }
+        }
+
+        function createCardTexture(content, isImage = false) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 640;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.roundRect(10, 10, 492, 620, 24);
+            ctx.fill();
+
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 6;
+            ctx.roundRect(24, 24, 464, 592, 18);
+            ctx.stroke();
+
+            if (!isImage) {
+                ctx.fillStyle = '#e11d48';
+                ctx.font = 'bold 160px "Playfair Display", serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(content, canvas.width / 2, canvas.height / 2);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function createDefaultSkyTexture() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 640;
+
+            const grad = ctx.createLinearGradient(0, 0, 0, 640);
+            grad.addColorStop(0, '#38bdf8');
+            grad.addColorStop(0.5, '#818cf8');
+            grad.addColorStop(1, '#c084fc');
+            ctx.fillStyle = grad;
+            ctx.roundRect(10, 10, 492, 620, 20);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(256, 200, 70, 0, Math.PI * 2);
+            ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function rebuildCardObjects() {
+            cardObjects.forEach(obj => scene.remove(obj.mesh));
+            cardObjects = [];
+
+            const cardCount = 12;
+
+            for (let i = 0; i < cardCount; i++) {
+                let cardTexture;
+                // Fixed: loops across all 6 available texture slots (0 through 5)
+                const textureIdx = i % loadedTextures.length;
+
+                if (loadedTextures[textureIdx]) {
+                    cardTexture = loadedTextures[textureIdx];
+                } else if (i % 2 === 0) {
+                    cardTexture = createCardTexture(customNumberStr, false);
+                } else {
+                    cardTexture = createDefaultSkyTexture();
+                }
+
+                const material = new THREE.MeshStandardMaterial({
+                    map: cardTexture,
+                    roughness: 0.3,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide
+                });
+
+                const geometry = new THREE.PlaneGeometry(14, 18);
+                const mesh = new THREE.Mesh(geometry, material);
+
+                const angle = (i / cardCount) * Math.PI * 2;
+                const radius = 65 + Math.random() * 20;
+                mesh.position.set(
+                    Math.cos(angle) * radius,
+                    (Math.random() - 0.5) * 40,
+                    Math.sin(angle) * radius
+                );
+
+                cardObjects.push({
+                    mesh: mesh,
+                    speedY: 0.01 + Math.random() * 0.02,
+                    rotSpeedY: (Math.random() - 0.5) * 0.005
+                });
+
+                scene.add(mesh);
+            }
+        }
+
+        let clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            controls.update();
+
+            if (centerCardMesh) {
+                centerCardMesh.quaternion.copy(camera.quaternion);
+            }
+
+            textObjects.forEach(obj => {
+                obj.mesh.quaternion.copy(camera.quaternion);
+                obj.mesh.position.z += obj.speedZ * textSpeedMultiplier;
+                if (obj.mesh.position.z > camera.position.z + 10) {
+                    obj.mesh.position.z = camera.position.z - 160;
+                    obj.mesh.position.x = (Math.random() - 0.5) * 140;
+                    obj.mesh.position.y = (Math.random() - 0.5) * 100;
+                }
+            });
+
+            cardObjects.forEach(obj => {
+                obj.mesh.position.y += obj.speedY;
+                obj.mesh.rotation.y += obj.rotSpeedY;
+
+                if (obj.mesh.position.y > 80) {
+                    obj.mesh.position.y = -80;
+                }
+            });
+
+            heartObjects.forEach((obj, idx) => {
+                obj.mesh.rotation.x += obj.rotSpeedX;
+                obj.mesh.rotation.y += obj.rotSpeedY;
+                obj.mesh.position.y = obj.basePos.y + Math.sin(elapsedTime * 2 + obj.offset) * 0.8;
+                obj.mesh.position.x = obj.basePos.x + Math.cos(elapsedTime * 1.5 + obj.offset) * 0.4;
+            });
+
+            if (starParticles) starParticles.rotation.y += 0.0002;
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function toggleAudio() {
+            const icon = document.getElementById('audio-icon');
+
+            if (!bgAudio.src) {
+                alert("Vui lòng tải file nhạc MP3 hoặc dán link MP3 vào Bảng Tùy Chỉnh trước!");
+                togglePanel();
+                return;
+            }
+
+            if (isAudioPlaying) {
+                bgAudio.pause();
+                isAudioPlaying = false;
+                icon.className = 'fas fa-music text-lg';
+            } else {
+                bgAudio.play().then(() => {
+                    isAudioPlaying = true;
+                    icon.className = 'fas fa-volume-up text-lg text-pink-400';
+                }).catch(err => {
+                    console.log("Audio play error:", err);
+                });
+            }
+        }
+
+        function uploadAudioFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const audioUrl = URL.createObjectURL(file);
+            bgAudio.src = audioUrl;
+            toggleAudio();
+        }
+
+        function loadAudioUrl() {
+            const url = document.getElementById('input-audio-url').value.trim();
+            if (!url) return;
+
+            bgAudio.src = url;
+            toggleAudio();
+        }
+
+        function togglePanel() {
+            const panel = document.getElementById('side-panel');
+            panel.classList.toggle('translate-x-full');
+        }
+
+        function populatePanelInputs() {
+            document.getElementById('input-messages-text').value = defaultMessages.join('\n');
+            document.getElementById('input-card-number').value = customNumberStr;
+            document.getElementById('input-text-speed').value = textSpeedMultiplier;
+            document.getElementById('speed-value-display').innerText = textSpeedMultiplier.toFixed(1) + 'x';
+            
+            document.getElementById('input-music-volume').value = musicVolumeValue;
+            document.getElementById('volume-value-display').innerText = Math.round(musicVolumeValue * 100) + '%';
+        }
+
+        function updateTextSpeedLabel() {
+            const val = document.getElementById('input-text-speed').value;
+            document.getElementById('speed-value-display').innerText = parseFloat(val).toFixed(1) + 'x';
+        }
+
+        function updateMusicVolume() {
+            const val = parseFloat(document.getElementById('input-music-volume').value);
+            document.getElementById('volume-value-display').innerText = Math.round(val * 100) + '%';
+            bgAudio.volume = val;
+        }
+
+        function buildCardTextureFromImg(img) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 640;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.roundRect(10, 10, 492, 620, 24);
+            ctx.fill();
+
+            ctx.save();
+            ctx.roundRect(24, 24, 464, 592, 18);
+            ctx.clip();
+            ctx.drawImage(img, 24, 24, 464, 592);
+            ctx.restore();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function uploadImageSlot(event, slotIdx) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    loadedTextures[slotIdx] = buildCardTextureFromImg(img);
+                    
+                    const previewDiv = document.getElementById(`preview-${slotIdx}`);
+                    if (previewDiv) {
+                        previewDiv.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                    }
+                    
+                    rebuildCardObjects();
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadUrlSlot(slotIdx) {
+            let url = document.getElementById(`url-slot-${slotIdx}`).value.trim();
+            if (!url) return;
+
+            if (url.includes('ibb.co/') && !url.includes('i.ibb.co')) {
+                const parts = url.split('/');
+                const code = parts[parts.length - 1];
+                url = `https://i.ibb.co/${code}/image.jpg`;
+                document.getElementById(`url-slot-${slotIdx}`).value = url;
+            }
+
+            if (url.includes('drive.google.com')) {
+                const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    url = 'https://lh3.googleusercontent.com/d/' + match[1];
+                }
+            }
+
+            if (url.startsWith('http') && !url.includes(window.location.hostname)) {
+                url = 'https://images.weserv.nl/?url=' + encodeURIComponent(url.replace(/^https?:\/\//, ''));
+            }
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = url;
+            img.onload = function() {
+                loadedTextures[slotIdx] = buildCardTextureFromImg(img);
+                
+                const previewDiv = document.getElementById(`preview-${slotIdx}`);
+                if (previewDiv) {
+                    previewDiv.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+                }
+                
+                rebuildCardObjects();
+            };
+            img.onerror = function() {
+                console.warn("Image load failed for URL:", url);
+            };
+        }
+
+        function applyAllCustomizations() {
+            const rawMessages = document.getElementById('input-messages-text').value;
+            const lines = rawMessages.split('\n').filter(l => l.trim() !== '');
+            if (lines.length > 0) {
+                defaultMessages = lines;
+                rebuildTextObjects(defaultMessages);
+            }
+
+            const numVal = document.getElementById('input-card-number').value.trim();
+            if (numVal !== '') {
+                customNumberStr = numVal;
+            }
+
+            const speedVal = parseFloat(document.getElementById('input-text-speed').value);
+            if (!isNaN(speedVal)) {
+                textSpeedMultiplier = speedVal;
+            }
+
+            const volVal = parseFloat(document.getElementById('input-music-volume').value);
+            if (!isNaN(volVal)) {
+                musicVolumeValue = volVal;
+                bgAudio.volume = musicVolumeValue;
+            }
+
+            rebuildCardObjects();
+            togglePanel();
+        }
+    </script>
+</body>
+</html>
